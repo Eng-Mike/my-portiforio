@@ -7,22 +7,24 @@ on:
   pull_request:
     branches:
       - main
+
 permissions:
-    id-token: write          # Required for OIDC
-    contents: read
+  id-token: write      # Required for OIDC
+  contents: read
 
 env:
   IMAGE_NAME: portiforio
   AWS_REGION: us-east-1
-  ACCOUNT_ID: ${{ secrets.ACCOUNT_ID}}
-  ECR_REPO: $ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/portiforio
+  ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+  ECR_REPO: ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/portiforio
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -34,18 +36,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # ✅ Let pytest auto-discover tests (works for test.py, tests/, etc.)
       - name: Run tests
         run: |
-          pytest # Run your test command here
+          pytest
 
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-        
+
+      # ✅ Build image with your ECR tag (or keep Docker Hub if you prefer)
       - name: Build Docker image
-        run: docker build -t Eng-Mike/my-portiforio .
-      - name: check credentials
+        run: docker build -t $ECR_REPO .
+
+      - name: Check AWS credentials
         run: aws s3 ls
 
