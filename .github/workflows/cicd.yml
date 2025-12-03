@@ -1,56 +1,39 @@
-name: utc APP
+name: Utc App ci/cd
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
 
 permissions:
-  id-token: write      # Required for OIDC
-  contents: read
-
+      id-token: write
+      contents: read
 env:
-  IMAGE_NAME: portiforio
+  python_version: 3.11
+  IMAGE_NAME: portfolio
   AWS_REGION: us-east-1
   ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
-  ECR_REPO: ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/portiforio
+  ECR_REPO: $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # ✅ Let pytest auto-discover tests (works for test.py, tests/, etc.)
-      - name: Run tests
-        run: |
-          pytest
-
+            python-version: ${{env.python_version}}  # or $python_version
+      - name: Install pytest
+        run: pip install -r requirements.txt
+      - name: unit test
+        run: pytest test.py
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
-      # ✅ Build image with your ECR tag (or keep Docker Hub if you prefer)
-      - name: Build Docker image
-        run: docker build -t $ECR_REPO .
-
-      - name: Check AWS credentials
-        run: aws s3 ls
-
+      
+      - name: Check credentials
+        run: aws s3 ls     
+      
