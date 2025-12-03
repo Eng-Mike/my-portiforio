@@ -1,33 +1,51 @@
 name: utc APP
 
 on:
-    push:
-        branches:
-        - main
-    pull_request:
-        branches:
-        - main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions:
+    id-token: write          # Required for OIDC
+    contents: read
 
+env:
+  IMAGE_NAME: portiforio
+  AWS_REGION: us-east-1
+  ACCOUNT_ID: ${{ secrets.ACCOUNT_ID}}
+  ECR_REPO: $ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/portiforio
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-        - name: Set up Python
-          uses: actions/setup-python@v4
-          with:
-              python-version: '3.9'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-        - name: Install dependencies
-          run: |
-              python -m pip install --upgrade pip
-              pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-        - name: Run tests
-          run: |
-              pytest tests/
+      - name: Run tests
+        run: |
+          pytest tests/
 
-    
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+        
+      - name: Build Docker image
+        run: docker build -t Eng-Mike/my-portiforio .
+      - name: check credentials
+        run: aws s3 ls
+
