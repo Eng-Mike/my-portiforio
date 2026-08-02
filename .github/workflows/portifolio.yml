@@ -26,7 +26,7 @@ jobs:
          aws-region: ${{ vars.AWS_REGION }}
 
      - name: Login to Amazon ECR
-       uses: aws-actions/amazon-ecr-login@v2
+       uses: aws-actions/amazon-ecr-login@v5
 
      - name: Build Docker Image
        run: |
