@@ -35,3 +35,13 @@ jobs:
           docker build -t $REGISTRY/$REPO:latest -t $REGISTRY/$REPO:${{ github.sha }} .
           docker push $REGISTRY/$REPO:latest
           docker push $REGISTRY/$REPO:${{ github.sha }}
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster myapp-cluster \
+            --service myapp-service \
+            --force-new-deployment
+          aws ecs wait services-stable \
+            --cluster myapp-cluster \
+            --services myapp-service
